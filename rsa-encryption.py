@@ -1,46 +1,43 @@
 import random
-
+import time 
 
 class RSA:
-
-
     def generate_keys(self, base26_first, base26_second):
-        base10_first = int(base26_first, 26)
-        base10_second = int(base26_second, 26)
+        base10_first = self.to_base_ten(base26_first, "abcdefghijklmnopqrstuvwxyz")
+        base10_second = self.to_base_ten(base26_second, "abcdefghijklmnopqrstuvwxyz")
 
-        mod_size = 10**200
+        if base10_first < 10**200:
+            print("Warning, first string was smaller than 10**200")
+        if base10_second < 10**200:
+            print("Warning, second string was smaller than 10**200")
 
-        if base10_first < mod_size:
-            print("Warning, first input was smaller than 10^200")
-        if base10_second < mod_size:
-            print("Warning, second input was smaller than 10^200")
+        base10_first = base10_first % 10**200
+        base10_second = base10_second % 10**200
 
-        base10_first_correct_size = base10_first % mod_size
-        base10_second_correct_size = base10_second % mod_size
+        base10_first = self.make_odd(base10_first)
+        base10_second = self.make_odd(base10_second)
 
-        base_10_first_odd = self.make_odd(base10_first_correct_size)
-        base_10_second_odd = self.make_odd(base10_second_correct_size)
+        while not self.is_prime_miller(base10_first):
+            base10_first += 2
 
-        while not self.is_prime_miller(base_10_first_odd):
-            base_10_first_odd += 2
+        while not self.is_prime_miller(base10_second):
+            base10_second += 2
 
-        while not self.is_prime_miller(base_10_second_odd):
-            base_10_second_odd += 2
-
-        p = base_10_first_odd
-        q = base_10_second_odd
+        p = base10_first
+        q = base10_second
 
         n = p*q
         r = (p-1)*(q-1)
 
+        e = self.get_e(r)
+        d = self.modular_inverse(e)
 
-        #e = 
-        #d = self.euclidean_inverse(e, r)
+        print("here")
+        with open("public.txt", "w") as f:
+            f.write(n)
 
-
-    def encrypy(self):
+    def encrypt(self):
         pass
-
 
     def decrypt(self):
         pass
@@ -51,13 +48,8 @@ class RSA:
             number += 1
         return number
     
-
-    def euclidean_inverse(self, e, r):
-        for i in range(1, r):
-            if (((e % r) * (i % r)) % r == 1):
-                return i
-        return -1
-    
+    def modular_inverse(self, e, r):
+        return pow(e, -1, r)
 
     def is_prime_miller(self, n):
         if n == 0: return False
@@ -69,7 +61,6 @@ class RSA:
             if not ok:
                 return False
         return True
-
 
     def miller_test(self, n, b):
         new_n = n - 1
@@ -91,12 +82,38 @@ class RSA:
             t *= 2
         return False
 
-
+    def from_base_ten(self, x, alphabet):
+        base = len(alphabet)
+        answer = ""
+        while x != 0:
+            r = x % base
+            answer += alphabet[r]
+            x //= base
+        return answer[::-1]
+    
+    def to_base_ten(self, s, alphabet):
+        x = 0
+        base = len(alphabet)
+        for c in s:
+            pos = alphabet.find(c)
+            x *= base
+            x += pos
+        return x
+    
+    def get_e(self, r):
+        e = 10**398 + 1
+        while self.GCD(r, e) != 1:
+            e += 2
+        print("gt here")
+        return e
+    
+    def GCD(self, a, b):
+        pass
+    
 def main():
     r = RSA()
-    r.generate_keys("79797979797979797979797979797979797979797979797979797979797979797979797797979797979797997979797979797979797979797979797979797979797979797979797979", 
-                    "68686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868686868")
-
+    r.generate_keys("thisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykey", 
+                   "thisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywow")
 
 if __name__ == "__main__":
     main()
