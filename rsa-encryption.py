@@ -1,5 +1,5 @@
 import random
-import time 
+import math
 
 class RSA:
     def generate_keys(self, base26_first, base26_second):
@@ -30,18 +30,65 @@ class RSA:
         r = (p-1)*(q-1)
 
         e = self.get_e(r)
-        d = self.modular_inverse(e)
+        d = self.modular_inverse(e, r)
 
-        print("here")
         with open("public.txt", "w") as f:
-            f.write(n)
+            f.write(str(n) + "\n" + str(e) + "\n")
 
-    def encrypt(self):
-        pass
+        with open("private.txt", "w") as f:
+            f.write(str(n) + "\n" + str(d) + "\n")
 
-    def decrypt(self):
-        pass
+    def encrypt(self, input, output):
+        alphabet = ".,?! \t\n\rabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            
+        fin = open(input,"rb")
+        plain_text_binary = fin.read()
+        plain_text = plain_text_binary.decode("utf-8")
+        fin.close()
 
+        n, e = 0, 0
+        with open("public.txt", "r") as f:
+            n = int(f.readline().strip())
+            e = int(f.readline().strip())
+
+        max_bytes = math.log(n, 70)
+        plain_text_length = len(plain_text)
+        blocks_needed = math.ceil(plain_text_length/max_bytes)
+        num_bytes_per_block = math.ceil(plain_text_length / blocks_needed)
+
+        fout = open(output,"wb")
+        for i in range(blocks_needed):
+            plain_text_block = plain_text[i*num_bytes_per_block:(i+1)*num_bytes_per_block]
+            plain_number = self.to_base_ten(plain_text_block, alphabet)
+            encrypted_number = pow(plain_number, e, n)
+            encrypted_text = self.from_base_ten(encrypted_number, alphabet)
+            encrypted_text += "$"
+            fout.write(encrypted_text.encode("utf-8"))
+        fout.close()
+
+    def decrypt(self, input, output):
+        alphabet = ".,?! \t\n\rabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+        fin = open(input,"rb")
+        encrypted_text_binary = fin.read()
+        encrypted_text = encrypted_text_binary.decode("utf-8")
+        fin.close()
+
+        n, d = 0, 0
+        with open("private.txt", "r") as f:
+            n = int(f.readline().strip())
+            d = int(f.readline().strip())
+
+        encrypted_text_blocks = encrypted_text.split("$")
+
+        fout = open(output,"wb")
+        for encrypted_text_block in encrypted_text_blocks:
+            if encrypted_text_block != "":
+                decrypted_number = self.to_base_ten(encrypted_text_block, alphabet)
+                decrypted_number = pow(decrypted_number, d, n)
+                decrypted_text = self.from_base_ten(decrypted_number, alphabet)
+                fout.write(decrypted_text.encode("utf-8"))
+        fout.close()
 
     def make_odd(self, number):
         if number % 2 == 0:
@@ -102,18 +149,16 @@ class RSA:
     
     def get_e(self, r):
         e = 10**398 + 1
-        while self.GCD(r, e) != 1:
+        while math.gcd(r, e) != 1:
             e += 2
-        print("gt here")
         return e
-    
-    def GCD(self, a, b):
-        pass
     
 def main():
     r = RSA()
     r.generate_keys("thisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykeythisismykey", 
-                   "thisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywow")
+                  "thisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywowthisismyothersupersecretkeywow")
+    r.encrypt("message.txt", "encrypted_message.txt")
+    r.decrypt("encrypted_message.txt", "decrypted_message.txt")
 
 if __name__ == "__main__":
     main()
